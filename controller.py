@@ -4,7 +4,7 @@ Iterates through a file of usernames, and, for each:
 - update ILLiad with the user's status
 """
 
-import datetime, json, logging, os
+import datetime, json, logging, os, pprint
 
 
 LOG_PATH = os.environ['LDP_BRNTP__LOG_PATH']
@@ -40,13 +40,14 @@ class Processor( object ):
             Called by manage_process() """
         with open( USER_FILEPATH, 'r', encoding='utf-8' ) as f1:
             names = f1.readlines()
+            log.debug( 'names, ```%s```' % pprint.pformat(names) )
         names = [ x.strip() for x in names ]
         tracker_dct = { 'names': {}, 'tracker_timestamp': str( datetime.datetime.now() ) }
         for name in names:
             tracker_dct['names'][name] = { 'processed': None, 'result': None, 'entry_timestamp': None }
         jsn = json.dumps( tracker_dct, sort_keys=True, indent=2 )
         log.debug( 'type(jsn), `%s`' % type(jsn) )
-        with open( USER_FILEPATH, 'w', encoding='utf-8' ) as f2:
+        with open( TRACKER_FILEPATH, 'w', encoding='utf-8' ) as f2:
             f2.write( jsn )
         return
 
