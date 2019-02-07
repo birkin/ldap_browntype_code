@@ -4,7 +4,7 @@ Iterates through a file of usernames, and, for each:
 - update ILLiad with the user's status
 """
 
-import datetime, json, logging, os, pprint
+import datetime, json, logging, os, pprint, time
 
 
 LOG_PATH = os.environ['LDP_BRNTP__LOG_PATH']
@@ -13,6 +13,7 @@ USER_FILEPATH = os.environ['LDP_BRNTP__USER_FILEPATH']
 TRACKER_FILEPATH = os.environ['LDP_BRNTP__TRACKER_FILEPATH']
 
 BUILD_TRACKER = True
+MAX_RECORDS_TO_PROCESS = 2  # for testing; total 2019-07 count 30,410
 
 
 level_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
@@ -58,10 +59,17 @@ class Processor( object ):
             - updates and saves tracker.
             Called by: manage_process() """
         self.tracker_dct = self.load_tracker_dct()
-        log.debug( 'will process_names' )
+        count = 0
+        while count < MAX_RECORDS_TO_PROCESS:
+            entry = self.grab_next_entry()
+            count += 1
+            time.sleep( .5 )
+        log.debug( 'process_names still under construction' )
         return
 
     def load_tracker_dct( self ):
+        """ Preps dct from json file if necessary.
+            Called by process_names() """
         if self.tracker_dct is None:
             with open( TRACKER_FILEPATH, 'r', encoding='utf-8' ) as f:
                 self.tracker_dct = json.loads( f.read() )
@@ -69,6 +77,14 @@ class Processor( object ):
         else:
             log.debug( 'tracker already loaded' )
         return
+
+    def grab_next_entry( self ):
+        """ Grabs the next unprocessed entry.
+            TODO: perhaps add an update_timestamp check other than None.
+            Called by process_names() """
+        entry = 'foo'
+        log.debug( 'entry, `%s`' % entry )
+        return entry
 
 
     ## end class Processor()
