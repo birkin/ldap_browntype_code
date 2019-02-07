@@ -26,7 +26,7 @@ log.info( '\n---\n' + 'starting\n' + '---' )
 class Processor( object ):
 
     def __init__( self ):
-        pass
+        self.tracker_dct = None
 
     def manage_process( self ):
         log.debug( 'starting manage_process()' )
@@ -44,7 +44,7 @@ class Processor( object ):
         names = [ x.lower().strip() for x in names ]
         tracker_dct = { 'names': {}, 'tracker_timestamp': datetime.datetime.now().isoformat() }
         for name in names:
-            tracker_dct['names'][name] = { 'processed': None, 'result': None, 'entry_timestamp': None }
+            tracker_dct['names'][name] = { 'ldap_status': None, 'update_result': None, 'update_timestamp': None }
         jsn = json.dumps( tracker_dct, sort_keys=True, indent=2 )
         with open( TRACKER_FILEPATH, 'w', encoding='utf-8' ) as f2:
             f2.write( jsn )
@@ -57,8 +57,19 @@ class Processor( object ):
             - calls update-status-api,
             - updates and saves tracker.
             Called by: manage_process() """
+        self.tracker_dct = self.load_tracker_dct()
         log.debug( 'will process_names' )
         return
+
+    def load_tracker_dct( self ):
+        if self.tracker_dct is None:
+            with open( TRACKER_FILEPATH, 'r', encoding='utf-8' ) as f:
+                self.tracker_dct = json.loads( f.read() )
+            log.debug( 'tracker loaded' )
+        else:
+            log.debug( 'tracker already loaded' )
+        return
+
 
     ## end class Processor()
 
