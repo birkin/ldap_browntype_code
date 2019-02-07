@@ -32,27 +32,33 @@ class Processor( object ):
         log.debug( 'starting manage_process()' )
         if BUILD_TRACKER is True:
             self.setup_tracker()
+        else:
+            log.debug( 'skipping tracker setup' )
         self.process_names()
-        1/0
 
     def setup_tracker( self ):
         """ Prepares tracker.
             Called by manage_process() """
         with open( USER_FILEPATH, 'r', encoding='utf-8' ) as f1:
             names = f1.readlines()
-            log.debug( 'names, ```%s```' % pprint.pformat(names) )
-        names = [ x.strip() for x in names ]
-        tracker_dct = { 'names': {}, 'tracker_timestamp': str( datetime.datetime.now() ) }
+        names = [ x.lower().strip() for x in names ]
+        tracker_dct = { 'names': {}, 'tracker_timestamp': datetime.datetime.now().isoformat() }
         for name in names:
             tracker_dct['names'][name] = { 'processed': None, 'result': None, 'entry_timestamp': None }
         jsn = json.dumps( tracker_dct, sort_keys=True, indent=2 )
-        log.debug( 'type(jsn), `%s`' % type(jsn) )
         with open( TRACKER_FILEPATH, 'w', encoding='utf-8' ) as f2:
             f2.write( jsn )
+        log.debug( 'tracker created' )
         return
 
     def process_names( self ):
-        print( 'will process_names' )
+        """ Loads tracker,
+            - finds next-entry to process,
+            - calls update-status-api,
+            - updates and saves tracker.
+            Called by: manage_process() """
+        log.debug( 'will process_names' )
+        return
 
     ## end class Processor()
 
