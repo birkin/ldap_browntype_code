@@ -12,7 +12,7 @@ LOG_LEVEL = os.environ['LDP_BRNTP__LOG_LEVEL']
 USER_FILEPATH = os.environ['LDP_BRNTP__USER_FILEPATH']
 TRACKER_FILEPATH = os.environ['LDP_BRNTP__TRACKER_FILEPATH']
 
-BUILD_TRACKER = True
+BUILD_TRACKER = False
 MAX_RECORDS_TO_PROCESS = 2  # for testing; total 2019-07 count 30,410
 
 
@@ -36,6 +36,7 @@ class Processor( object ):
         else:
             log.debug( 'skipping tracker setup' )
         self.process_names()
+        return
 
     def setup_tracker( self ):
         """ Prepares tracker.
@@ -58,10 +59,11 @@ class Processor( object ):
             - calls update-status-api,
             - updates and saves tracker.
             Called by: manage_process() """
-        self.tracker_dct = self.load_tracker_dct()
+        self.load_tracker_dct()
         count = 0
         while count < MAX_RECORDS_TO_PROCESS:
             entry = self.grab_next_entry()
+            self.process_name_dct( entry )
             count += 1
             time.sleep( .5 )
         log.debug( 'process_names still under construction' )
@@ -70,6 +72,7 @@ class Processor( object ):
     def load_tracker_dct( self ):
         """ Preps dct from json file if necessary.
             Called by process_names() """
+        # log.debug( 'dct, ```%s```' % self.tracker_dct )
         if self.tracker_dct is None:
             with open( TRACKER_FILEPATH, 'r', encoding='utf-8' ) as f:
                 self.tracker_dct = json.loads( f.read() )
@@ -80,12 +83,17 @@ class Processor( object ):
 
     def grab_next_entry( self ):
         """ Grabs the next unprocessed entry.
+            Example return: ```{ 'the_username': {'ldap_status': None, 'update_result': None, 'update_timestamp': None} }```
             TODO: perhaps add an update_timestamp check other than None.
             Called by process_names() """
-        entry = 'foo'
-        log.debug( 'entry, `%s`' % entry )
-        return entry
-
+        entry_to_check_next = None
+        names = list( self.tracker_dct['names'].keys() )
+        for name in names:
+            entry_to_check_next = { name: self.tracker_dct['names'][name] }
+            if entry_to_check_next[name]['update_timestamp'] is None:
+                break
+        log.debug( 'entry_to_check_next, `%s`' % entry_to_check_next )
+        return entry_to_check_next
 
     ## end class Processor()
 
