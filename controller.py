@@ -4,13 +4,14 @@ Iterates through a file of usernames, and, for each:
 - update ILLiad with the user's status
 """
 
-import datetime, json, logging, os, pprint, time
+import datetime, json, logging, os, pprint, subprocess, time
 
 
 LOG_PATH = os.environ['LDP_BRNTP__LOG_PATH']
 LOG_LEVEL = os.environ['LDP_BRNTP__LOG_LEVEL']
-USER_FILEPATH = os.environ['LDP_BRNTP__USER_FILEPATH']
+USER_FILEPATH = os.environ['LDP_BRNTP__USERNAMES_FILEPATH']
 TRACKER_FILEPATH = os.environ['LDP_BRNTP__TRACKER_FILEPATH']
+LDAP_SCRIPT_PATH = os.environ['LDP_BRNTP__LDAP_SCRIPT_PATH']
 
 BUILD_TRACKER = False
 MAX_RECORDS_TO_PROCESS = 2  # for testing; total 2019-07 count 30,410
@@ -63,7 +64,7 @@ class Processor( object ):
         count = 0
         while count < MAX_RECORDS_TO_PROCESS:
             entry = self.grab_next_entry()
-            self.process_name_dct( entry )
+            entry = self.grab_ldap_status( entry )
             count += 1
             time.sleep( .5 )
         log.debug( 'process_names still under construction' )
@@ -94,6 +95,30 @@ class Processor( object ):
                 break
         log.debug( 'entry_to_check_next, `%s`' % entry_to_check_next )
         return entry_to_check_next
+
+    def grab_ldap_status( self, entry ):
+        """ Assigns current ldap status to name-dct.
+            Called by process_names() """
+        # command = 'java -cp %s net.sf.saxon.Transform -t -s:"%s" -xsl:"%s" -o:"%s"' % (
+        #     settings_app.SAXON_CLASSPATH, temp_xml_path, temp_xsl_path, temp_output_path )
+
+        username = list( entry.keys() )[0]
+        command = 'php %s -u %s' % ( LDAP_SCRIPT_PATH, username )
+        log.debug( 'command, `%s`' % command )
+
+        try:
+            subprocess.check_output( [command, '-1'], stderr=subprocess.STDOUT, shell=True )
+            temp_output_file_reference.flush()
+            transformed_xml = temp_output_file_reference.read().decode('utf-8')  # saxon produces byte-string output
+        except subprocess.CalledProcessError as e:
+            log.error( 'exception, ```%s```' % unicode(repr(e)) )
+            log.error( 'e.output, `%s`' % e.output )
+            # log.error( 'e.__dict__, ```%s```' % pprint.pformat(e.__dict__) )
+            transformed_xml = 'Error on transformation; see log at `%s`' % unicode( datetime.datetime.now() )
+        log.debug( 'type(transformed_xml), `%s`; transformed_xml, ```%s```' % (type(transformed_xml), transformed_xml) )
+        return transformed_xml
+
+
 
     ## end class Processor()
 
