@@ -148,6 +148,16 @@ class Processor( object ):
         log.debug( 'processed_entry_dct, ```%s```' % entry_dct )
         return entry_dct
 
+    def hit_illiad_api( self, username, ldap_status ):
+        """ Hits illiad-api to update status.
+            Called by run_update() """
+        return 'foo'
+
+    def process_api_response( self, username, ldap_status, api_response ):
+        """ Prepares entry_dct based on api response.
+            Called by run_update() """
+        return 'bar'
+
     ## end class Processor()
 
 
