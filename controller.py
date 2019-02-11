@@ -12,6 +12,8 @@ LOG_LEVEL = os.environ['LDP_BRNTP__LOG_LEVEL']
 USER_FILEPATH = os.environ['LDP_BRNTP__USERNAMES_FILEPATH']
 TRACKER_FILEPATH = os.environ['LDP_BRNTP__TRACKER_FILEPATH']
 LDAP_SCRIPT_PATH = os.environ['LDP_BRNTP__LDAP_SCRIPT_PATH']
+ILLIAD_API_URL = os.environ['LDP_BRNTP__ILLIAD_API_URL']
+
 
 BUILD_TRACKER = False
 MAX_RECORDS_TO_PROCESS = 2  # for testing; total 2019-07 count 30,410
@@ -131,8 +133,10 @@ class Processor( object ):
                 ldap_jdct = json.loads( ldap_response )
             except Exception as e:
                 status = 'problem loading json; see logs for username, `%s`' % username
-            try:
+            try:  # happy path
                 status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
+                if status:
+                    status = status.lower()
             except Exception as f:
                 status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
         log.debug( 'status, ```%s```' % status )
@@ -153,9 +157,19 @@ class Processor( object ):
         return entry_dct
 
     def hit_illiad_api( self, username, ldap_status ):
-        """ Hits illiad-api to update status.
+        """ Hits illiad-api to update status unless it's already set.
             Called by run_update() """
-        return 'foo'
+        api_response = 'init'
+        url = '%s%s' % ( ILLIAD_API_URL, 'update_status/' )
+        params = {
+            'auth_key': ILLIAD_API_KEY, 'user': username, 'requested_status': ldap_status }
+        try:
+            r = requests.post( url, data=params, verify=True, timeout=10 )
+            api_response = r.content.decode('utf-8', 'replace')
+            log.debug( 'status_code, `%s`; api_response, ```%s```' % (r.status_code, api_response) )
+        except Exception as e:
+            log.error( 'error on status check/update, ```%s```' % repr(e) )
+        return api_response
 
     def process_api_response( self, username, ldap_status, api_response ):
         """ Prepares entry_dct based on api response.
