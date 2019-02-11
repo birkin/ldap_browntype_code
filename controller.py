@@ -64,7 +64,8 @@ class Processor( object ):
         count = 0
         while count < MAX_RECORDS_TO_PROCESS:
             entry_dct = self.grab_next_entry()
-            status = self.grab_ldap_status( list(entry_dct.keys())[0] )
+            ldap_status = self.grab_ldap_status( list(entry_dct.keys())[0] )
+            processed_entry_dct = self.run_update( entry_dct, ldap_status )
             count += 1
             time.sleep( .5 )
         log.debug( 'process_names still under construction' )
@@ -133,7 +134,19 @@ class Processor( object ):
         log.debug( 'status, ```%s```' % status )
         return status
 
-
+    def run_update( self, entry_dct, ldap_status ):
+        """ Hits illiad-status-update api if necessary, then builds and returns entry_dct.
+            Called by process_names() """
+        username = list( entry_dct.keys() )[0]
+        if ldap_status is None:
+            entry_dct = { username: {'ldap_status': None, 'update_result': 'Not updated, no ldap status found.', 'update_timestamp': datetime.datetime.now().isoformat()} }
+        elif ldap_status[0:7] == 'problem':
+            entry_dct = { username: {'ldap_status': None, 'update_result': ldap_status, 'update_timestamp': datetime.datetime.now().isoformat()} }
+        else:
+            api_response = self.hit_illiad_api( username, ldap_status )
+            entry_dct = self.process_api_response( username, ldap_status, api_response )
+        log.debug( 'processed_entry_dct, ```%s```' % entry_dct )
+        return entry_dct
 
     ## end class Processor()
 
