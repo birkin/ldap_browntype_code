@@ -64,8 +64,7 @@ class Processor( object ):
         count = 0
         while count < MAX_RECORDS_TO_PROCESS:
             entry_dct = self.grab_next_entry()
-            ldap_response = self.grab_ldap_status( list(entry_dct.keys())[0] )
-            status = self.process_ldap_response( ldap_response )
+            status = self.grab_ldap_status( list(entry_dct.keys())[0] )
             count += 1
             time.sleep( .5 )
         log.debug( 'process_names still under construction' )
@@ -100,11 +99,16 @@ class Processor( object ):
     def grab_ldap_status( self, username ):
         """ Assigns current ldap status to name-dct.
             Called by process_names() """
-        # ldap_response = 'init'
-        # username = list( entry.keys() )[0]
-        # command = 'php %s -u %s' % ( LDAP_SCRIPT_PATH, username )
-        ( ldap_response, command ) = ( 'init', 'php %s -u %s' % (LDAP_SCRIPT_PATH, username) )
+        command = 'php %s -u %s' % ( LDAP_SCRIPT_PATH, username )
         log.debug( 'command, `%s`' % command )
+        ldap_response = self.check_ldap( command )
+        status = self.process_ldap_response( ldap_response, username )
+        return status
+
+    def check_ldap( self, command ):
+        """ Hits ldap script.
+            Called by grab_ldap_status() """
+        ldap_response = 'init'
         try:
             ldap_response = subprocess.check_output( [command, '-1'], stderr=subprocess.STDOUT, shell=True )
         except subprocess.CalledProcessError as e:
@@ -114,6 +118,20 @@ class Processor( object ):
             log.error( 'other exception f, ```%s```' % repr(f) )
         log.debug( 'type(ldap_response), `%s`; ldap_response, ```%s```' % (type(ldap_response), ldap_response) )
         return ldap_response
+
+    def process_ldap_response( self, ldap_response, username ):
+        """ Grabs status.
+            Called by grab_ldap_status() """
+        if ldap_response == 'init':
+            status = 'problem, response still `init`; see logs for username, `%s`' % username
+        else:
+            try:
+                ldap_jdct = json.loads( ldap_response )
+                status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
+            except Exception as e:
+                status = 'problem loading json; see logs for username, `%s`' % username
+        log.debug( 'status, ```%s```' % status )
+        return status
 
 
 
