@@ -121,20 +121,6 @@ class Processor( object ):
         log.debug( 'type(ldap_response), `%s`; ldap_response, ```%s```' % (type(ldap_response), ldap_response) )
         return ldap_response
 
-    # def process_ldap_response( self, ldap_response, username ):
-    #     """ Grabs status.
-    #         Called by grab_ldap_status() """
-    #     if ldap_response == 'init':
-    #         status = 'problem, response still `init`; see logs for username, `%s`' % username
-    #     else:
-    #         try:
-    #             ldap_jdct = json.loads( ldap_response )
-    #             status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
-    #         except Exception as e:
-    #             status = 'problem loading json; see logs for username, `%s`' % username
-    #     log.debug( 'status, ```%s```' % status )
-    #     return status
-
     def process_ldap_response( self, ldap_response, username ):
         """ Grabs status.
             Called by grab_ldap_status() """
@@ -148,7 +134,7 @@ class Processor( object ):
             try:
                 status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
             except Exception as f:
-                status = 'problem getting `browntype`; json response:```%s```' % ldap_response
+                status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
         log.debug( 'status, ```%s```' % status )
         return status
 
