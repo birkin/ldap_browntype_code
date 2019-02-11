@@ -65,7 +65,8 @@ class Processor( object ):
         while count < MAX_RECORDS_TO_PROCESS:
             entry_dct = self.grab_next_entry()
             ldap_status = self.grab_ldap_status( list(entry_dct.keys())[0] )
-            processed_entry_dct = self.run_update( entry_dct, ldap_status )
+            processed_entry_dct = self.run_update( entry_dct, ldap_status )  # hits illiad-api if necessary
+            self.write_tracker_update( processed_entry_dct )
             count += 1
             time.sleep( .5 )
         log.debug( 'process_names still under construction' )
@@ -120,6 +121,20 @@ class Processor( object ):
         log.debug( 'type(ldap_response), `%s`; ldap_response, ```%s```' % (type(ldap_response), ldap_response) )
         return ldap_response
 
+    # def process_ldap_response( self, ldap_response, username ):
+    #     """ Grabs status.
+    #         Called by grab_ldap_status() """
+    #     if ldap_response == 'init':
+    #         status = 'problem, response still `init`; see logs for username, `%s`' % username
+    #     else:
+    #         try:
+    #             ldap_jdct = json.loads( ldap_response )
+    #             status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
+    #         except Exception as e:
+    #             status = 'problem loading json; see logs for username, `%s`' % username
+    #     log.debug( 'status, ```%s```' % status )
+    #     return status
+
     def process_ldap_response( self, ldap_response, username ):
         """ Grabs status.
             Called by grab_ldap_status() """
@@ -128,9 +143,12 @@ class Processor( object ):
         else:
             try:
                 ldap_jdct = json.loads( ldap_response )
-                status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
             except Exception as e:
                 status = 'problem loading json; see logs for username, `%s`' % username
+            try:
+                status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
+            except Exception as f:
+                status = 'problem getting `browntype`; json response:```%s```' % ldap_response
         log.debug( 'status, ```%s```' % status )
         return status
 
@@ -141,7 +159,7 @@ class Processor( object ):
         if ldap_status is None:
             entry_dct = { username: {'ldap_status': None, 'update_result': 'Not updated, no ldap status found.', 'update_timestamp': datetime.datetime.now().isoformat()} }
         elif ldap_status[0:7] == 'problem':
-            entry_dct = { username: {'ldap_status': None, 'update_result': ldap_status, 'update_timestamp': datetime.datetime.now().isoformat()} }
+            entry_dct = { username: {'ldap_status': None, 'update_result': 'Not updated, %s' % ldap_status, 'update_timestamp': datetime.datetime.now().isoformat()} }
         else:
             api_response = self.hit_illiad_api( username, ldap_status )
             entry_dct = self.process_api_response( username, ldap_status, api_response )
@@ -157,6 +175,19 @@ class Processor( object ):
         """ Prepares entry_dct based on api response.
             Called by run_update() """
         return 'bar'
+
+    def write_tracker_update( self, processed_entry_dct ):
+        """ Updates local_dct instance-attribute, and writes to tracker-file.
+            Called by process_names() """
+        try:
+            username = list( processed_entry_dct.keys() )[0]
+            self.tracker_dct['names'][username] = processed_entry_dct[username]
+            with open( TRACKER_FILEPATH, 'w', encoding='utf-8' ) as f:
+                f.write( json.dumps(self.tracker_dct, sort_keys = True, indent = 2) )
+            log.debug( 'tracker updated and written' )
+        except Exception as e:
+            log.error( 'exception updating and writing tracker file, ```%s```' % repr(e) )
+        return
 
     ## end class Processor()
 
