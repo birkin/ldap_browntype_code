@@ -18,7 +18,7 @@ ILLIAD_API_KEY = os.environ['LDP_BRNTP__ILLIAD_API_KEY']
 
 
 BUILD_TRACKER = False
-MAX_RECORDS_TO_PROCESS = 2  # for testing; total 2019-07 count 30,410
+MAX_RECORDS_TO_PROCESS = 1  # for testing; total 2019-07 count 30,410
 
 
 level_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
@@ -177,7 +177,14 @@ class Processor( object ):
     def process_api_response( self, username, ldap_status, api_response ):
         """ Prepares entry_dct based on api response.
             Called by run_update() """
-        return 'bar'
+        jdct = json.loads( api_response )
+        if jdct['response']['updated_status'] is None:
+            update_result = jdct['response']['error']
+        else:
+            update_result = 'upated from `%s` to `%s`' % ( jdct['response']['initial_status'], jdct['response']['updated_status'] )
+        entry_dct = { username: {'ldap_status': ldap_status, 'update_result': update_result, 'update_timestamp': datetime.datetime.now().isoformat()} }
+        log.debug( 'entry_dct after processing api response, ```%s```' % entry_dct )
+        return entry_dct
 
     def write_tracker_update( self, processed_entry_dct ):
         """ Updates local_dct instance-attribute, and writes to tracker-file.
