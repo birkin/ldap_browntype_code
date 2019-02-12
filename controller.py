@@ -5,6 +5,7 @@ Iterates through a file of usernames, and, for each:
 """
 
 import datetime, json, logging, os, pprint, subprocess, time
+import requests
 
 
 LOG_PATH = os.environ['LDP_BRNTP__LOG_PATH']
@@ -13,6 +14,7 @@ USER_FILEPATH = os.environ['LDP_BRNTP__USERNAMES_FILEPATH']
 TRACKER_FILEPATH = os.environ['LDP_BRNTP__TRACKER_FILEPATH']
 LDAP_SCRIPT_PATH = os.environ['LDP_BRNTP__LDAP_SCRIPT_PATH']
 ILLIAD_API_URL = os.environ['LDP_BRNTP__ILLIAD_API_URL']
+ILLIAD_API_KEY = os.environ['LDP_BRNTP__ILLIAD_API_KEY']
 
 
 BUILD_TRACKER = False
@@ -59,6 +61,7 @@ class Processor( object ):
     def process_names( self ):
         """ Loads tracker,
             - finds next-entry to process,
+            - gets ldap status,
             - calls update-status-api,
             - updates and saves tracker.
             Called by: manage_process() """
