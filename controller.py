@@ -139,7 +139,7 @@ class Processor( object ):
             try:  # happy path
                 status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
                 if status:
-                    status = status.lower()
+                    status = status.strip()
             except Exception as f:
                 status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
         log.debug( 'status, ```%s```' % status )
@@ -181,7 +181,7 @@ class Processor( object ):
         if jdct['response']['updated_status'] is None:
             update_result = jdct['response']['error']
         else:
-            update_result = 'upated from `%s` to `%s`' % ( jdct['response']['initial_status'], jdct['response']['updated_status'] )
+            update_result = 'updated from `%s` to `%s`' % ( jdct['response']['initial_status'], jdct['response']['updated_status'] )
         entry_dct = { username: {'ldap_status': ldap_status, 'update_result': update_result, 'update_timestamp': datetime.datetime.now().isoformat()} }
         log.debug( 'entry_dct after processing api response, ```%s```' % entry_dct )
         return entry_dct
