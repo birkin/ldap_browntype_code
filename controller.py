@@ -126,6 +126,25 @@ class Processor( object ):
         log.debug( 'type(ldap_response), `%s`; ldap_response, ```%s```' % (type(ldap_response), ldap_response) )
         return ldap_response
 
+    # def process_ldap_response( self, ldap_response, username ):
+    #     """ Grabs status.
+    #         Called by grab_ldap_status() """
+    #     if ldap_response == 'init':
+    #         status = 'problem, response still `init`; see logs for username, `%s`' % username
+    #     else:
+    #         try:
+    #             ldap_jdct = json.loads( ldap_response )
+    #         except Exception as e:
+    #             status = 'problem loading json; see logs for username, `%s`' % username
+    #         try:  # happy path
+    #             status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
+    #             if status:
+    #                 status = status.strip()
+    #         except Exception as f:
+    #             status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
+    #     log.debug( 'status, ```%s```' % status )
+    #     return status
+
     def process_ldap_response( self, ldap_response, username ):
         """ Grabs status.
             Called by grab_ldap_status() """
@@ -140,9 +159,18 @@ class Processor( object ):
                 status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
                 if status:
                     status = status.strip()
+                else:
+                    status = self.check_alum( ldap_response )
             except Exception as f:
                 status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
         log.debug( 'status, ```%s```' % status )
+        return status
+
+    def check_alum( self, ldap_response ):
+        """ See if user without status is an alum.
+            Called by process_ldap_response() """
+        status = None
+        log.debug( 'status, `%s`' % status )
         return status
 
     def run_update( self, entry_dct, ldap_status ):
