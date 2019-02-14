@@ -18,7 +18,7 @@ ILLIAD_API_KEY = os.environ['LDP_BRNTP__ILLIAD_API_KEY']
 
 
 BUILD_TRACKER = False
-MAX_RECORDS_TO_PROCESS = 2  # for testing; total 2019-07 count 30,410
+MAX_RECORDS_TO_PROCESS = 5  # for testing; total 2019-07 count 30,410
 
 
 level_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
@@ -160,16 +160,24 @@ class Processor( object ):
                 if status:
                     status = status.strip()
                 else:
-                    status = self.check_alum( ldap_response )
+                    status = self.check_alum( ldap_jdct )
             except Exception as f:
                 status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
         log.debug( 'status, ```%s```' % status )
         return status
 
-    def check_alum( self, ldap_response ):
+    def check_alum( self, ldap_jdct ):
         """ See if user without status is an alum.
             Called by process_ldap_response() """
         status = None
+        groups = ldap_jdct['info']['isMemberOf']
+        target_alum_statuses = [ 'BROWN:COMMUNITY:ALUMNI:ALL' ]  # maybe more in future?
+        for group in group:
+            if group in target_alum_statuses:
+                status = 'ALUMNI'
+                break
+            else:
+                log.debug( 'other alum status, `%s`' % group )
         log.debug( 'status, `%s`' % status )
         return status
 
