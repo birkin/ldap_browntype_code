@@ -18,7 +18,7 @@ ILLIAD_API_KEY = os.environ['LDP_BRNTP__ILLIAD_API_KEY']
 
 
 BUILD_TRACKER = False
-MAX_RECORDS_TO_PROCESS = 5  # for testing; total 2019-07 count 30,410
+MAX_RECORDS_TO_PROCESS = 1  # for testing; total 2019-07 count 30,410
 
 
 level_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
@@ -162,6 +162,7 @@ class Processor( object ):
                 else:
                     status = self.check_alum( ldap_jdct )
             except Exception as f:
+                log.debug( 'exception f, `%s`' % f )
                 status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
         log.debug( 'status, ```%s```' % status )
         return status
@@ -172,7 +173,7 @@ class Processor( object ):
         status = None
         groups = ldap_jdct['info']['isMemberOf']
         target_alum_statuses = [ 'BROWN:COMMUNITY:ALUMNI:ALL' ]  # maybe more in future?
-        for group in group:
+        for group in groups:
             if group in target_alum_statuses:
                 status = 'ALUMNI'
                 break
