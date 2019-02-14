@@ -18,7 +18,7 @@ ILLIAD_API_KEY = os.environ['LDP_BRNTP__ILLIAD_API_KEY']
 
 
 BUILD_TRACKER = False
-MAX_RECORDS_TO_PROCESS = 1  # for testing; total 2019-07 count 30,410
+MAX_RECORDS_TO_PROCESS = 3  # for testing; total 2019-07 count 30,410
 
 
 level_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
@@ -154,6 +154,7 @@ class Processor( object ):
             try:
                 ldap_jdct = json.loads( ldap_response )
             except Exception as e:
+                log.debug( 'handled exception e, `%s`' % repr(e) )
                 status = 'problem loading json; see logs for username, `%s`' % username
             try:  # happy path
                 status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
@@ -162,7 +163,7 @@ class Processor( object ):
                 else:
                     status = self.check_alum( ldap_jdct )
             except Exception as f:
-                log.debug( 'exception f, `%s`' % f )
+                log.debug( 'handled exception f, `%s`' % repr(f) )
                 status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
         log.debug( 'status, ```%s```' % status )
         return status
@@ -178,7 +179,8 @@ class Processor( object ):
                 status = 'ALUMNI'
                 break
             else:
-                log.debug( 'other alum status, `%s`' % group )
+                if 'ALUM' in group:
+                    log.debug( 'other alum status, `%s`' % group )
         log.debug( 'status, `%s`' % status )
         return status
 
