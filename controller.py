@@ -18,7 +18,7 @@ ILLIAD_API_KEY = os.environ['LDP_BRNTP__ILLIAD_API_KEY']
 
 
 BUILD_TRACKER = False
-MAX_RECORDS_TO_PROCESS = 3  # for testing; total 2019-07 count 30,410
+MAX_RECORDS_TO_PROCESS = 105  # for testing; total 2019-07 count 30,410
 
 
 level_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
@@ -73,9 +73,37 @@ class Processor( object ):
             processed_entry_dct = self.run_update( entry_dct, ldap_status )  # hits illiad-api if necessary
             self.write_tracker_update( processed_entry_dct )
             count += 1
-            time.sleep( .5 )
+            self.check_print( count )
         log.debug( 'process_names still under construction' )
         return
+
+    def check_print( self, count ):
+        """ Outputs count if necessary.
+            Called by process_names() """
+        time.sleep( .3 )
+        if count % 100 == 0:
+            timestamp = datetime.datetime.now().isoformat()
+            print( '`%s` records processed; timestamp, `%s`' % (count, timestamp) )
+        return
+
+    # def process_names( self ):
+    #     """ Loads tracker,
+    #         - finds next-entry to process,
+    #         - gets ldap status,
+    #         - calls update-status-api,
+    #         - updates and saves tracker.
+    #         Called by: manage_process() """
+    #     self.load_tracker_dct()
+    #     count = 0
+    #     while count < MAX_RECORDS_TO_PROCESS:
+    #         entry_dct = self.grab_next_entry()
+    #         ldap_status = self.grab_ldap_status( list(entry_dct.keys())[0] )
+    #         processed_entry_dct = self.run_update( entry_dct, ldap_status )  # hits illiad-api if necessary
+    #         self.write_tracker_update( processed_entry_dct )
+    #         count += 1
+    #         time.sleep( .5 )
+    #     log.debug( 'process_names still under construction' )
+    #     return
 
     def load_tracker_dct( self ):
         """ Preps dct from json file if necessary.
@@ -125,25 +153,6 @@ class Processor( object ):
             log.error( 'other exception f, ```%s```' % repr(f) )
         log.debug( 'type(ldap_response), `%s`; ldap_response, ```%s```' % (type(ldap_response), ldap_response) )
         return ldap_response
-
-    # def process_ldap_response( self, ldap_response, username ):
-    #     """ Grabs status.
-    #         Called by grab_ldap_status() """
-    #     if ldap_response == 'init':
-    #         status = 'problem, response still `init`; see logs for username, `%s`' % username
-    #     else:
-    #         try:
-    #             ldap_jdct = json.loads( ldap_response )
-    #         except Exception as e:
-    #             status = 'problem loading json; see logs for username, `%s`' % username
-    #         try:  # happy path
-    #             status = ldap_jdct['info']['browntype']  # note, could be `null/None` -- odd but true
-    #             if status:
-    #                 status = status.strip()
-    #         except Exception as f:
-    #             status = 'problem getting `browntype`; json response:```%s```' % json.loads( ldap_response )
-    #     log.debug( 'status, ```%s```' % status )
-    #     return status
 
     def process_ldap_response( self, ldap_response, username ):
         """ Grabs status.
