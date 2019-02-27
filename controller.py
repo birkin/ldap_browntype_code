@@ -18,7 +18,7 @@ ILLIAD_API_KEY = os.environ['LDP_BRNTP__ILLIAD_API_KEY']
 
 
 BUILD_TRACKER = False
-MAX_RECORDS_TO_PROCESS = 105  # for testing; total 2019-07 count 30,410
+MAX_RECORDS_TO_PROCESS = 5  # for testing; total 2019-07 count 30,410
 
 
 level_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
@@ -134,11 +134,33 @@ class Processor( object ):
     def grab_ldap_status( self, username ):
         """ Assigns current ldap status to name-dct.
             Called by process_names() """
-        command = 'php %s -u %s' % ( LDAP_SCRIPT_PATH, username )
-        log.debug( 'command, `%s`' % command )
-        ldap_response = self.check_ldap( command )
-        status = self.process_ldap_response( ldap_response, username )
-        return status
+        try:
+            command = 'php %s -u %s' % ( LDAP_SCRIPT_PATH, username )
+            log.debug( 'command, `%s`' % command )
+            ldap_response = self.check_ldap( command )
+            status = self.process_ldap_response( ldap_response, username )
+            return status
+        except Exception as e:
+            log.warning( 'ldap try failed with error, `%s`; will try once more' % repr(e) )
+            try:
+                command = 'php %s -u %s' % ( LDAP_SCRIPT_PATH, username )
+                log.debug( 'command, try #2, `%s`' % command )
+                ldap_response = self.check_ldap( command )
+                status = self.process_ldap_response( ldap_response, username )
+                return status
+            except Exception as f:
+                message = 'ldap second try failed with error, `%s`; halting execution' % repr( f )
+                log.error( message )
+                raise Exception( message )
+
+    # def grab_ldap_status( self, username ):
+    #     """ Assigns current ldap status to name-dct.
+    #         Called by process_names() """
+    #     command = 'php %s -u %s' % ( LDAP_SCRIPT_PATH, username )
+    #     log.debug( 'command, `%s`' % command )
+    #     ldap_response = self.check_ldap( command )
+    #     status = self.process_ldap_response( ldap_response, username )
+    #     return status
 
     def check_ldap( self, command ):
         """ Hits ldap script.
