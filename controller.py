@@ -18,7 +18,7 @@ ILLIAD_API_KEY = os.environ['LDP_BRNTP__ILLIAD_API_KEY']
 
 
 BUILD_TRACKER = False
-MAX_RECORDS_TO_PROCESS = 5  # for testing; total 2019-07 count 30,410
+MAX_RECORDS_TO_PROCESS = 30000  # for testing; total 2019-07 count 30,410
 
 
 level_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
